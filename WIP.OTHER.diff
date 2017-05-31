@@ -1,0 +1,301 @@
+diff --git a/docs/advanced-tutorial.rst b/docs/advanced-tutorial.rst
+index b2abcc2..8e32214 100644
+--- a/docs/advanced-tutorial.rst
++++ b/docs/advanced-tutorial.rst
+@@ -5,8 +5,8 @@ Please read the basic [tutorial] first.
+ 
+ **TODO:**
+ 
+-* running shell commands with system()
+-* yesno options
+-* sections
+-* includes
+-
++* modifying files with lineinfile/blockinfile
++* InstallFromSource
++* yesno options, and how they tie into the --neverprompt and --alwaysprompt flags
++* respecting the --nopull flag
++* respecting the --neverprompt flag in your own code - what if there's no TTY?
+diff --git a/docs/ref/cli.rst b/docs/ref/cli.rst
+index 24741e3..c2bf28d 100644
+--- a/docs/ref/cli.rst
++++ b/docs/ref/cli.rst
+@@ -100,12 +100,14 @@ add`_, runs all of their ``HOMELY.py`` scripts, and then performs
+     these calls in a conditional check for :any:`homely-ui-allowinteractive` to
+     avoid unnecessary errors).
+ 
++.. TODO: link to the yesno() docs or the tutorial on how to use yesno() effectively
+ 
+ The ``--nopull`` and ``--only`` options are useful when you are working on your
+ ``HOMELY.py`` script - the ``--nopull`` option stops you from wasting time
+ checking the internet for the same updates on every run, and the ``--only``
+ option allows you to execute only the section you are working on.
+ 
++.. TODO: link to the tutorial on --nopull handling when it is ready
+ 
+ Examples
+ ^^^^^^^^
+@@ -136,6 +138,8 @@ that dotfiles repo.
+     been registered using `homely add`_. You may specify multiple REPOs to
+     remove at once.
+ 
++.. TODO: make @section references into links above
++
+ Examples
+ ^^^^^^^^
+ 
+diff --git a/docs/tutorial.rst b/docs/tutorial.rst
+index a843649..b5a3e2a 100644
+--- a/docs/tutorial.rst
++++ b/docs/tutorial.rst
+@@ -61,6 +61,15 @@ path, the repo's local path will be similar to what ``git clone`` would use.
+ cloned to ``~/dotfiles``.). Check the CLI Reference for :any:`homely-add` for
+ more information.
+ 
++You should see output similar to this::
++
++    [peter@mac ~]$ homely add https://github.com/peter/dotfiles.git
++    [Tue Sep 27 07:49:52 2016]     Cloning https://github.com/peter/dotfiles.git to tmp:/tmp/tmpr01c_5_j/dotfiles
++    [Tue Sep 27 07:49:52 2016]     $ git clone https://github.com/peter/dotfiles.git /tmp/tmpr01c_5_j/dotfiles
++    [Tue Sep 27 07:49:52 2016]     &> Cloning into '/tmp/tmpr01c_5_j/dotfiles'...
++    [Tue Sep 27 07:50:15 2016] ::: Updating from /home/peter/dotfiles [2dfd48b0]
++    [Tue Sep 27 07:50:15 2016] ERR   /home/peter/dotfiles/HOMELY.py does not exist
++
+ 
+ 3. Write and Run a HOMELY.py script
+ -----------------------------------
+@@ -85,6 +94,15 @@ could create a ``HOMELY.py`` script that looks like this::
+ Now you can use :any:`homely-update` to execute your ``HOMELY.py``::
+ 
+     $ homely update
++    [Tue Sep 27 03:04:42 2016] ::: Updating from /home/peter/dotfiles [2dfd48b0]
++    [Tue Sep 27 03:04:42 2016]     - Pulling changes for /home/peter/dotfiles
++    [Tue Sep 27 03:04:42 2016]       - /home/peter/dotfiles$ git status --porcelain
++    [Tue Sep 27 03:04:42 2016]       - /home/peter/dotfiles$ git pull
++    [Tue Sep 27 03:04:48 2016]         &> Already up-to-date.
++    [Tue Sep 27 03:04:48 2016]     - Create dir /home/peter/.coonfig: Running ...
++    [Tue Sep 27 03:04:48 2016]     - Create dir /home/peter/.coonfig/nvim: Running ...
++    [Tue Sep 27 03:04:48 2016]     - Create dir /home/peter/.coonfig/pip: Running ...
++
+ 
+ Now, assuming you already have a ``pip.conf`` and an ``init.vim`` in your
+ ``~/.config`` directory, you might want to move these files into your dotfiles
+@@ -109,13 +127,21 @@ files::
+ 
+     # NOTE that we use homely's symlink() not os.symlink()
+     from homely.files import symlink
+-    symlink('init.vim', '~/.coonfig/nvim')
+-    symlink('pip.conf', '~/.coonfig/pip')
++    # TODO: make sure this syntax with the trailing slash will work
++    symlink('init.vim', '~/.coonfig/nvim/')
++    symlink('pip.conf', '~/.coonfig/pip/')
+ 
+ **homely**'s functions are idempotent, so it is safe to run them again and
+ again. Run :any:`homely-update` again now to install your symlinks::
+ 
+     $ homely update
++    [Tue Sep 27 03:07:54 2016] ::: Updating from /home/peter/dotfiles [2dfd48b0]
++    [Tue Sep 27 03:07:54 2016]     - Pulling changes for /home/peter/dotfiles
++    [Tue Sep 27 03:07:54 2016]       - /home/peter/dotfiles$ git status --porcelain
++    [Tue Sep 27 03:07:54 2016]       - /home/peter/dotfiles$ git pull
++    [Tue Sep 27 03:07:59 2016]         &> Already up-to-date.
++    [Tue Sep 27 03:07:59 2016]     - Create symlink /home/peter/init.vim -> /home/peter/.coonfig/nvim/init.vim: Running ...
++    [Tue Sep 27 03:07:59 2016]     - Create symlink /home/peter/pip.conf -> /home/peter/.coonfig/pip/pip.conf: Running ...
+ 
+ Oh no! We misspelled ``~/.config`` everywhere! This is actually OK, because
+ **homely**'s :any:`automatic-cleanup` can remove all these unwanted
+@@ -136,6 +162,9 @@ while we're at it::
+ Now re-run update::
+ 
+     $ homely update
++
++.. TODO: paste content here
++
+ So what exactly did :any:`homely-update` do here?
+ 
+ * First, :any:`homely-update` re-ran the corrected ``HOMELY.py`` script which
+@@ -183,3 +212,15 @@ and then::
+     $ homely update
+     
+ Check the reference for :any:`homely-install-installpkg` for more information.
++
++.. TODO: show what the output would look like if you ran this on OS X
++
++
++TODO:
++^^^^^
++
++* download()ing
++* pipinstall()'ing
++* sections
++* running shell commands with execute()
++* A sample HOMELY.py script that does all the things we talked about above.
+diff --git a/homely/files.py b/homely/files.py
+index bab8a5c..c0ad782 100644
+--- a/homely/files.py
++++ b/homely/files.py
+@@ -50,6 +50,9 @@ def symlink(target, linkname=None):
+         linkname = os.path.join(os.environ.get('HOME'),
+                                 os.path.basename(target))
+     else:
++        # allow the symlink to end with '/'
++        if linkname.endswith('/'):
++            linkname = linkname + os.path.basename(target)
+         linkname = _homepath2real(linkname)
+     getengine().run(MakeSymlink(target, linkname))
+ 
+@@ -162,7 +165,8 @@ class MakeSymlink(Helper):
+         assert linkname.startswith('/')
+         self._target = target
+         self._linkname = linkname
+-        assert self._target != self._linkname
++        if self._target == self._linkname:
++            raise ValueError("target and linkname must be different paths")
+ 
+     def getclaims(self):
+         return []
+diff --git a/homely/ui.py b/homely/ui.py
+index b9b10c8..3cfbacf 100644
+--- a/homely/ui.py
++++ b/homely/ui.py
+@@ -2,3 +2,4 @@
+ from homely._errors import InputError  # noqa: F401
+ from homely._ui import (allowinteractive, allowpull, head, note,  # noqa: F401
+                         warn, yesno)
++from homely.general import section  # noqa: F401
+diff --git a/test/system/test_symlink.py b/test/system/test_symlink.py
+new file mode 100644
+index 0000000..457a81d
+--- /dev/null
++++ b/test/system/test_symlink.py
+@@ -0,0 +1,130 @@
++import os
++
++from pytest import HOMELY, TempRepo, contents, getsystemfn
++
++
++def test_symlink_paths(HOME, tmpdir, monkeypatch):
++    from os import mkdir
++    from homely._utils import RepoInfo
++    from homely._vcs.testhandler import Repo
++
++    nesteddest1 = HOME + '/nested/nested.txt'
++
++    tr = TempRepo(tmpdir, 'dotfiles')
++    repoflat = tr.remotepath + '/f-original.txt'
++    reponested = tr.remotepath
++    contents(repoflat, 'flat original')
++    mkdir(tr.remotepath + '/afolder')
++    contents(reponested + '/afolder/n-original.txt', 'nested original')
++
++    remoterepo = Repo.frompath(tr.remotepath)
++    # make a local copy of the repo for us to work with
++    localpath = tr.suggestedlocal(HOME)
++    remoterepo.clonetopath(localpath)
++    localrepo = Repo.frompath(localpath)
++
++    import homely._engine2
++    homely._engine2.setrepoinfo(RepoInfo(localrepo, localrepo.getrepoid()))
++
++    class FakeEngine(object):
++        def expect(self, target, linkname):
++            self.expected_target = target
++            self.expected_linkname = linkname
++
++        def run(self, helper):
++            pass
++
++    fake_engine = FakeEngine()
++
++    class FakeSymlinkMaker(object):
++        def __init__(self, target, linkname):
++            assert target == fake_engine.expected_target
++            assert linkname == fake_engine.expected_linkname
++
++    import homely.files
++    monkeypatch.setattr(homely.files, "getengine", lambda: fake_engine)
++    monkeypatch.setattr(homely.files, "MakeSymlink", FakeSymlinkMaker)
++
++    from homely.files import symlink
++
++    def _verify(target, linkname):
++        raise Exception("TODO: test that a symlink to target was made at linkname")  # noqa
++
++    def flat_to_flat(arg1, arg2=None, targetname=None, env=None):
++        if env is not None:
++            restore = {}
++            for key in env:
++                if key in os.environ:
++                    restore[key] = os.environ[key]
++                os.environ[key] = env[key]
++        if targetname is None:
++            target = HOME + '/dotfiles/flat.txt'
++        else:
++            target = HOME + '/dotfiles/' + targetname
++        fake_engine.expect(target, repoflat)
++        symlink(arg1, arg2)
++
++        # restore env
++        if env is not None:
++            for key in env:
++                if key in restore:
++                    os.environ[key] = restore[key]
++                else:
++                    os.environ.pop(key)
++
++    def not_allowed(arg1, arg2=None):
++        try:
++            symlink(arg1, arg2)
++        except ValueError:
++            pass
++        else:
++            raise Exception("A ValueError was expected")
++
++    def flat_to_nested(arg1, arg2=None):
++        fake_engine.expect(target, reponested)
++        symlink(arg1, arg2)
++
++    def nested_to_flat(arg1, arg2=None):
++        # TODO: test that a symlink from ~/afolder/nested.txt is made to
++        # repo/flat.txt
++        variants.append((arg1, arg2, nesteddest1, reponested))
++
++    def nested_to_nested(arg1, arg2=None):
++        # TODO: test that a symlink from ~/afolder/nested.txt is made to
++        # repo/nested/nested.txt
++        variants.append((arg1, arg2, nesteddest1, reponested))
++
++    # test that all calls to symlink() is with these 1 or 2 positional
++    # arguments are valid, and result in the correct target and linkname
++    flat_to_flat('flat.txt')
++    flat_to_flat('flat.txt', 'file.txt', destname='file.txt')
++    flat_to_flat('flat.txt', '~/file.txt', destname='file.txt')
++    flat_to_flat('flat.txt', '$HOME/file.txt', destname='file.txt')
++    flat_to_flat('flat.txt', '$HOME/$MYTARGET',
++                 env={"MYTARGET": "file.txt"}, destname="file.txt")
++    flat_to_flat('./flat.txt')
++    flat_to_flat('flat.txt', '~/')
++    flat_to_flat('flat.txt', '$HOME/')
++
++    # Test that none of these invocations are allowed. Why? Because the
++    # automatic linkname would be the name of the target.
++    not_allowed('~/flat.txt')
++    not_allowed('$HOME/flat.txt', '~/')
++    not_allowed('$HOME/flat.txt', '$HOME/')
++
++    # test that these invocations work - even though they're asking for the
++    # link to be created at a path which is already occupied by the $HOME dir,
++    # this isn't checked at this point
++    for badpath in ('~', '$HOME'):
++        fake_engine.expect('zzzzzz/f-original.txt',
++                           os.path.realpath(os.environ['HOME']))
++        symlink('f-original.txt', badpath)
++
++    #nested_to_home('~/flat.txt', 'afolder/nested.txt')
++    #nested_to_home('$HOME/flat.txt', 'afolder/nested.txt')
++
++    #nested_to_flat('flat.txt', 'afolder/nested.txt')
++
++    #home_to_nested('repofolder/nested.txt')
++    #home_to_nested('repofolder/nested.txt', '~/')
++    #home_to_nested('repofolder/nested.txt', '$HOME/')
