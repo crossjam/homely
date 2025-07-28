@@ -1,0 +1,33 @@
+name: Automated Release
+on:
+  push:
+    tags:
+      - "*"
+
+# see https://docs.github.com/en/actions/how-tos/use-cases-and-examples/building-and-testing/building-and-testing-python
+jobs:
+  pypi-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+
+    # Dedicated environments with protections for publishing are strongly recommended.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/homely
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: pipx install uv
+      - run: sh bin/ci/check_versions.sh
+      - run: uv build
+      - run: find dist
+      - name: Publish release distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

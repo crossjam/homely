@@ -2,6 +2,12 @@
  CHANGELOG
 ===========
 
+Version 0.20.1 - 19 Oct 2024
+----------------------------
+
+* Use async/await syntax to support newer versions of python
+
+
 Version 0.20.0 - 10 Apr 2022
 ----------------------------
 
